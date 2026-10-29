@@ -101,6 +101,7 @@ function copyPrev(){const p=add(wk,-7);if(S.lg.some(l=>l.w===wk))return alert('T
 function pickAll(on){S.st.forEach(s=>on?sel.add(s.id):sel.delete(s.id));render()}
 function tog(i){sel.has(i)?sel.delete(i):sel.add(i)}
 function addSt(){const n=$('#sn').value.trim();if(!n)return;S.st.push({id:id8(),n,p:$('#sp').value.trim(),ph:$('#sh').value.trim()});save()}
+function delAll(){if(!S.st.length)return;if(confirm('Xóa tất cả '+S.st.length+' học sinh và toàn bộ ghi nhận của các em? Không thể hoàn tác.')){S.st=[];S.lg=[];sel.clear();save()}}
 function delSt(i){if(confirm('Xóa học sinh này và các ghi nhận của em?')){S.st=S.st.filter(s=>s.id!==i);S.lg=S.lg.filter(l=>l.s!==i);save()}}
 async function imp(f){if(!f)return;if(!window.XLSX)return alert('Chưa tải được thư viện đọc Excel.');
   try{const wb=XLSX.read(await f.arrayBuffer()),r=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
@@ -140,7 +141,7 @@ function vTk(){const ms=weeks();
 
 function vHs(){return `<div class="card"><div class="row"><button class="bt o" onclick="tpl()">Tải file mẫu</button>
   <label class="bt" style="cursor:pointer">Nhập Excel<input type="file" accept=".xlsx,.xls,.csv" hidden onchange="imp(this.files[0]);this.value=''"></label></div>
-  <div class="row"><input id="sn" placeholder="Họ và tên"><input id="sp" placeholder="Phụ huynh"><input id="sh" placeholder="Số điện thoại" inputmode="tel"><button class="bt" onclick="addSt()">Thêm học sinh</button></div></div>
+  <div class="row"><input id="sn" placeholder="Họ và tên"><input id="sp" placeholder="Phụ huynh"><input id="sh" placeholder="Số điện thoại" inputmode="tel"><button class="bt" onclick="addSt()">Thêm học sinh</button><button class="bt" style="background:var(--c)" onclick="delAll()">Xóa tất cả</button></div></div>
   <div class="card tw"><table><tr><th>Họ và tên</th><th>Phụ huynh</th><th>Liên lạc</th><th></th></tr>
   ${S.st.map(s=>`<tr><td>${esc(s.n)}</td><td>${esc(s.p)}</td><td>${s.ph?`${esc(s.ph)} <a href="tel:${esc(s.ph)}">Gọi</a> · <a href="sms:${esc(s.ph)}">Nhắn</a>`:''}</td><td><button class="x" onclick="delSt('${s.id}')">Xóa</button></td></tr>`).join('')||'<tr><td colspan="4" class="leg">Chưa có học sinh.</td></tr>'}</table></div>`}
 

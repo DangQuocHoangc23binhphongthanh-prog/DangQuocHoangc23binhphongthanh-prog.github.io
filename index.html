@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sổ hạnh kiểm lớp chủ nhiệm</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&family=Fraunces:wght@600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f4efe4;--card:#fffdf7;--ink:#1f2a24;--mut:#697068;--line:#ddd4c0;--acc:#1f5c46;--t:#2e7d4f;--k:#2f6fb0;--d:#c98512;--c:#b8372f;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14201b;--card:#1c2b24;--ink:#ece6d6;--mut:#a3aa9f;--line:#33463d;--acc:#6fcf9d;--t:#5fc88a;--k:#6aa6e0;--d:#e3a23a;--c:#ec7a72;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14201b;--card:#1c2b24;--ink:#ece6d6;--mut:#a3aa9f;--line:#33463d;--acc:#6fcf9d;--t:#5fc88a;--k:#6aa6e0;--d:#e3a23a;--c:#ec7a72;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Be Vietnam Pro",system-ui,sans-serif}
+header{padding:20px 16px 0;max-width:1100px;margin:auto}
+h1{font:600 26px/1.2 Fraunces,Georgia,serif;margin:0 0 2px;color:var(--acc)}
+.sub{color:var(--mut);font-size:13px}
+nav{display:flex;gap:4px;margin-top:14px;border-bottom:2px solid var(--line);overflow-x:auto}
+nav button{border:0;background:none;color:var(--mut);padding:10px 14px;font:500 15px/1.4 "Be Vietnam Pro",system-ui,sans-serif;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
+nav button.on{color:var(--acc);border-color:var(--acc);font-weight:700}
+main{max-width:1100px;margin:auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.num{font:600 32px Fraunces,Georgia,serif;color:var(--acc)}
+.lab{font-size:13px;color:var(--mut)}
+.warn{background:#f6e6b8;color:#5a4300;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:7px;padding:7px 9px;max-width:100%}
+button.bt{background:var(--acc);color:#fff;border:0;border-radius:7px;padding:8px 14px;font:inherit;font-weight:500;cursor:pointer}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) button.bt{color:#10201a}}
+button.bt.o{background:none;color:var(--acc);border:1px solid var(--acc)}
+button.x{background:none;border:0;color:var(--mut);cursor:pointer;font-size:15px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
+.b{display:inline-block;padding:2px 10px;border-radius:99px;font-size:13px;font-weight:700;color:#fff;white-space:nowrap}
+.b.t{background:var(--t)}.b.k{background:var(--k)}.b.d{background:var(--d)}.b.c{background:var(--c)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .b{color:#10201a}}
+.ch{display:inline-flex;align-items:center;gap:2px;margin:2px 4px 2px 0;padding:2px 4px 2px 9px;border-radius:99px;font-size:12.5px;border:1px solid var(--line)}
+.ch.nhe{border-color:var(--d)}.ch.ncp{border-color:var(--mut)}.ch.vkp{border-color:var(--d);background:rgba(201,133,18,.15)}.ch.ntr{border-color:var(--c)}.ch.dbt{background:var(--c);color:#fff;border-color:var(--c)}.ch.dbt button.x{color:#fff}.ch.td{border-color:var(--t);background:rgba(46,125,79,.15)}
+.bar{display:flex;align-items:center;gap:10px;margin:6px 0}.bar i{display:block;height:12px;border-radius:6px}
+.pick{max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:7px;padding:6px 10px;columns:2 180px}
+.pick label{display:block;padding:2px 0;cursor:pointer}
+.leg{font-size:12.5px;color:var(--mut)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Sổ hạnh kiểm lớp chủ nhiệm</h1>
+  <div class="sub">Trường THPT Chê Ghê-va-ra · mỗi tháng bắt đầu từ 100 điểm, lỗi các tuần trừ dồn</div>
+  <nav id="nav"></nav>
+</header>
+<main id="main"></main>
+<script>
+const LV=['Tốt','Khá','Đạt','Chưa đạt'],K='tkdc';
+const G={nhe:'Lỗi nhẹ',ncp:'Nghỉ có phép',vkp:'Vắng không phép',ntr:'Lỗi nghiêm trọng',dbt:'Lỗi đặc biệt nghiêm trọng',td:'Tuyên dương'};
+let D={nhe:-5,ncp:-5,vkp:-15,ntr:-30,dbt:0,td:5},T=[90,75,60];
+let C=[['Đi học muộn','nhe'],['Sai đồng phục','nhe'],['Sai tác phong, đầu tóc (nhuộm tóc, móng tay, bông tai)','nhe'],['Giày cao gót quá 5 cm','nhe'],['Xả rác, không giữ vệ sinh chung','nhe'],['Mang thức ăn, nước ngọt vào lớp','nhe'],['Không tắt đèn, quạt khi rời phòng','nhe'],['Không chuẩn bị bài, không làm bài tập','nhe'],['Nói chuyện, làm việc riêng trong giờ học','nhe'],['Mất trật tự khi sinh hoạt dưới cờ, sinh hoạt tập thể','nhe'],
+['Nghỉ có phép (không có giấy xác nhận y tế)','ncp'],
+['Vắng không phép','vkp'],['Nghỉ trái buổi, cúp tiết, bỏ lao động hoặc hoạt động tập thể','vkp'],
+['Uống rượu bia','ntr'],['Tàng trữ văn hóa phẩm đồi trụy','ntr'],['Vi phạm pháp luật khác (mức nghiêm trọng)','ntr'],
+['Đánh nhau, kéo bè phái','dbt'],['Hút thuốc lá, thuốc lá điện tử','dbt'],['Gian lận kiểm tra, thi cử','dbt'],['Vô lễ, xúc phạm giáo viên, bạn học (kể cả trên mạng)','dbt'],['Dùng điện thoại trong giờ học khi chưa được phép','dbt'],['Mua bán, sử dụng chất gây nghiện','dbt'],['Tàng trữ pháo, chất cháy nổ','dbt'],
+['Tuyên dương trước lớp','td']];
+let S={st:[],lg:[]},tab='tq',uid=null,db=null,dl=null,path='',sel=new Set(),cr=0,tm;
+const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const id8=()=>Math.random().toString(36).slice(2,10);
+const fmt=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const add=(s,n)=>{const d=new Date(s+'T00:00:00');d.setDate(d.getDate()+n);return fmt(d)};
+const mon=s=>{const d=new Date(s+'T00:00:00');return add(s,-((d.getDay()+6)%7))};
+const dm=s=>s.slice(8)+'/'+s.slice(5,7);
+let wk=mon(fmt(new Date()));
+const name=i=>(S.st.find(x=>x.id===i)||{}).n||'(đã xóa)';
+
+function calc(sid,mk){let p=100,nh=0,td=0,x=false;
+  for(const l of S.lg){if(l.s!==sid||l.w.slice(0,7)!==mk||!C[l.c])continue;const g=C[l.c][1];
+    if(g==='dbt')x=true;else if(g==='td')td++;else{p+=D[g];if(g==='nhe')nh++}}
+  p+=D.td*Math.min(td,nh);
+  return{p,x,lv:x?3:p>=T[0]?0:p>=T[1]?1:p>=T[2]?2:3}}
+function months(){const s=new Set(S.lg.map(l=>l.w.slice(0,7)));s.add(wk.slice(0,7));return[...s].sort()}
+function hk(sid,h){const ms=months().filter(m=>(+m.slice(5)>=8)===(h===1));if(!ms.length)return null;
+  const r=ms.map(m=>calc(sid,m)),n=[0,0,0,0];r.forEach(a=>n[a.lv]++);
+  const mx=Math.max(...n);let lv=n[r[r.length-1].lv]===mx?r[r.length-1].lv:n.indexOf(mx);
+  if(r.some(a=>a.x))lv=Math.max(lv,2);return lv}
+const ov=(s,k)=>S.ov&&S.ov[s+'|'+k]!=null?+S.ov[s+'|'+k]:null;
+const hv=(s,h)=>{const o=ov(s,'HK'+h);return o!=null?o:hk(s,h)};
+function yr(sid){const o=ov(sid,'NAM');if(o!=null)return o;const a=hv(sid,1),b=hv(sid,2);return a==null?b:b==null?a:a===b?a:b}
+function setOv(s,k,v){S.ov=S.ov||{};if(v==='')delete S.ov[s+'|'+k];else S.ov[s+'|'+k]=+v;save()}
+const ovc=(s,k,v)=>`${bd(v)}<br><select style="font-size:12px;padding:2px" onchange="setOv('${s}','${k}',this.value)"><option value="">Tự động</option>${LV.map((l,i)=>`<option value="${i}"${ov(s,k)===i?' selected':''}>${l}</option>`).join('')}</select>`;
+const bd=(lv,p)=>lv==null?'–':`<span class="b ${K[lv]}">${LV[lv]}${p!=null?' · '+p:''}</span>`;
+
+function save(){render();if(window.LS){try{S.cfg={C,D,T};localStorage.setItem('sohk',JSON.stringify(S))}catch(e){}return}if(!db)return;clearTimeout(tm);tm=setTimeout(async()=>{try{S.cfg={C,D,T};await db.doc(path).set(S)}catch(e){alert('Chưa lưu được dữ liệu: '+(e.message||e.code||e))}},500)}
+function go(t){tab=t;render()}
+function setWk(v){if(v){wk=mon(v);render()}}
+function addLog(){if(!sel.size)return alert('Hãy tích chọn ít nhất một học sinh.');sel.forEach(s=>S.lg.push({id:id8(),s,w:wk,c:cr}));sel.clear();save()}
+function delLog(i){S.lg=S.lg.filter(l=>l.id!==i);save()}
+function copyPrev(){const p=add(wk,-7);if(S.lg.some(l=>l.w===wk))return alert('Tuần này đã có ghi nhận, không thể sao chép đè.');
+  const a=S.lg.filter(l=>l.w===p);if(!a.length)return alert('Tuần trước chưa có ghi nhận.');a.forEach(l=>S.lg.push({id:id8(),s:l.s,w:wk,c:l.c}));save()}
+function pickAll(on){S.st.forEach(s=>on?sel.add(s.id):sel.delete(s.id));render()}
+function tog(i){sel.has(i)?sel.delete(i):sel.add(i)}
+function addSt(){const n=$('#sn').value.trim();if(!n)return;S.st.push({id:id8(),n,p:$('#sp').value.trim(),ph:$('#sh').value.trim()});save()}
+function delSt(i){if(confirm('Xóa học sinh này và các ghi nhận của em?')){S.st=S.st.filter(s=>s.id!==i);S.lg=S.lg.filter(l=>l.s!==i);save()}}
+async function imp(f){if(!f)return;if(!window.XLSX)return alert('Chưa tải được thư viện đọc Excel.');
+  try{const wb=XLSX.read(await f.arrayBuffer()),r=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
+  let n=0;r.slice(1).forEach(x=>{if(x[0]){S.st.push({id:id8(),n:String(x[0]).trim(),p:String(x[1]||'').trim(),ph:String(x[2]||'').trim()});n++}});
+  alert('Đã nhập '+n+' học sinh.');save()}catch(e){alert('File không đọc được.')}}
+async function out(fn,aoa){if(!window.XLSX)return alert('Chưa tải được thư viện Excel.');
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),'Sheet1');
+  const d=XLSX.write(wb,{bookType:'xlsx',type:'array'});try{if(dl)await dl.save({filename:fn,data:d});else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([d]));a.download=fn;a.click()}}catch(e){}}
+const tpl=()=>out('mau-danh-sach-hoc-sinh.xlsx',[['Họ và tên','Phụ huynh (ví dụ: Mẹ - Nguyễn Thị Hoa)','Số điện thoại'],['Nguyễn Văn An','Mẹ - Nguyễn Thị Hoa','0912345678']]);
+function exp(){const ms=months();out('tong-ket-hanh-kiem.xlsx',[['Họ và tên',...ms.map(m=>m.slice(5)+'/'+m.slice(0,4)),'Học kỳ 1','Học kỳ 2','Cả năm'],
+  ...S.st.map(s=>[s.n,...ms.map(m=>{const a=calc(s.id,m);return LV[a.lv]+' ('+(a.x?'đặc biệt':a.p)+')'}),...[hv(s.id,1),hv(s.id,2),yr(s.id)].map(v=>v==null?'':LV[v])])])}
+
+function vTq(){const mk=wk.slice(0,7),ls=S.lg.filter(l=>l.w===wk),n=[0,0,0,0];
+  S.st.forEach(s=>n[calc(s.id,mk).lv]++);const t=S.st.length||1;
+  const er=ls.filter(l=>!['td'].includes(C[l.c][1])).length,pr=ls.length-er;
+  return `<div class="grid"><div class="card"><div class="num">${S.st.length}</div><div class="lab">học sinh trong lớp</div></div>
+  <div class="card"><div class="num">${er}</div><div class="lab">lỗi ghi nhận tuần ${dm(wk)}</div></div>
+  <div class="card"><div class="num">${pr}</div><div class="lab">tuyên dương tuần ${dm(wk)}</div></div></div>
+  <div class="card"><b>Xếp loại tháng ${mk.slice(5)}/${mk.slice(0,4)} (tính đến hết tuần đang xem)</b>
+  ${LV.map((l,i)=>`<div class="bar"><span style="width:70px">${l}</span><i style="width:${Math.max(n[i]/t*100,1)}%;background:var(--${K[i]})"></i><span>${n[i]} học sinh</span></div>`).join('')}
+  <div class="leg">Tốt từ ${T[0]} điểm · Khá ${T[1]}–${T[0]-1} · Đạt ${T[2]}–${T[1]-1} · Chưa đạt dưới ${T[2]} hoặc có lỗi đặc biệt nghiêm trọng</div></div>`}
+
+function vDg(){if(!S.st.length)return'<div class="card">Chưa có học sinh. Vào mục Học sinh để nhập danh sách.</div>';
+  const mk=wk.slice(0,7);let o='';for(const g in G)o+=`<optgroup label="${G[g]+(g==='dbt'?' (Chưa đạt)':' ('+(D[g]>0?'+':'')+D[g]+')')}">`+C.map((c,i)=>c[1]===g&&!c[2]?`<option value="${i}"${i===cr?' selected':''}>${esc(c[0])}</option>`:'').join('')+'</optgroup>';
+  return `<div class="card"><div class="row"><label>Tuần <input type="date" value="${wk}" onchange="setWk(this.value)"></label><b>${dm(wk)} – ${dm(add(wk,6))}</b>
+  <button class="bt o" onclick="copyPrev()">Sao chép tuần trước</button></div>
+  <div class="row"><select onchange="cr=+this.value" style="flex:1;min-width:220px">${o}</select><button class="bt" onclick="addLog()">Ghi cho học sinh đã chọn</button></div>
+  <div class="row"><button class="bt o" onclick="pickAll(true)">Chọn tất cả</button><button class="bt o" onclick="pickAll(false)">Bỏ chọn</button><span class="leg">Đã chọn: ${sel.size}</span></div>
+  <div class="pick">${S.st.map(s=>`<label><input type="checkbox" ${sel.has(s.id)?'checked':''} onchange="tog('${s.id}')"> ${esc(s.n)}</label>`).join('')}</div></div>
+  <div class="card tw"><table><tr><th>Học sinh</th><th>Ghi nhận tuần này</th><th>Tháng ${mk.slice(5)}</th></tr>
+  ${S.st.map(s=>{const a=calc(s.id,mk);return `<tr><td>${esc(s.n)}</td><td>${S.lg.filter(l=>l.s===s.id&&l.w===wk).map(l=>`<span class="ch ${C[l.c][1]}">${esc(C[l.c][0])}<button class="x" onclick="delLog('${l.id}')" title="Xóa">×</button></span>`).join('')||'<span class="leg">Chưa có</span>'}</td><td>${bd(a.lv,a.x?null:a.p)}</td></tr>`}).join('')}</table></div>`}
+
+function vTk(){const ms=months();
+  return `<div class="card"><div class="row"><button class="bt" onclick="exp()">Xuất Excel</button><span class="leg">Học kỳ: lấy mức nhiều nhất trong các tháng, hòa thì lấy tháng cuối. Cả năm: ưu tiên học kỳ 2. GVCN có thể chỉnh tay ở ô chọn dưới mỗi mức. Tháng 8–12 tính học kỳ 1, tháng 1–7 tính học kỳ 2.</span></div>
+  <div class="tw"><table><tr><th>Họ và tên</th>${ms.map(m=>`<th>${m.slice(5)}/${m.slice(0,4)}</th>`).join('')}<th>HK1</th><th>HK2</th><th>Cả năm</th></tr>
+  ${S.st.map(s=>`<tr><td>${esc(s.n)}</td>${ms.map(m=>{const a=calc(s.id,m);return `<td>${bd(a.lv,a.x?null:a.p)}</td>`}).join('')}<td>${ovc(s.id,'HK1',hv(s.id,1))}</td><td>${ovc(s.id,'HK2',hv(s.id,2))}</td><td>${ovc(s.id,'NAM',yr(s.id))}</td></tr>`).join('')}</table></div></div>`}
+
+function vHs(){return `<div class="card"><div class="row"><button class="bt o" onclick="tpl()">Tải file mẫu</button>
+  <label class="bt" style="cursor:pointer">Nhập Excel<input type="file" accept=".xlsx,.xls,.csv" hidden onchange="imp(this.files[0]);this.value=''"></label></div>
+  <div class="row"><input id="sn" placeholder="Họ và tên"><input id="sp" placeholder="Phụ huynh"><input id="sh" placeholder="Số điện thoại" inputmode="tel"><button class="bt" onclick="addSt()">Thêm học sinh</button></div></div>
+  <div class="card tw"><table><tr><th>Họ và tên</th><th>Phụ huynh</th><th>Liên lạc</th><th></th></tr>
+  ${S.st.map(s=>`<tr><td>${esc(s.n)}</td><td>${esc(s.p)}</td><td>${s.ph?`${esc(s.ph)} <a href="tel:${esc(s.ph)}">Gọi</a> · <a href="sms:${esc(s.ph)}">Nhắn</a>`:''}</td><td><button class="x" onclick="delSt('${s.id}')">Xóa</button></td></tr>`).join('')||'<tr><td colspan="4" class="leg">Chưa có học sinh.</td></tr>'}</table></div>`}
+
+function vCd(){return `<div class="card"><b>Điểm mỗi lần ghi</b><div class="row">${['nhe','ncp','vkp','ntr','td'].map(g=>`<label>${G[g]} <input type="number" style="width:70px" value="${D[g]}" onchange="D['${g}']=+this.value;save()"></label>`).join('')}</div>
+<div class="row"><b>Mức xếp loại</b>${[['Tốt từ',0],['Khá từ',1],['Đạt từ',2]].map(a=>`<label>${a[0]} <input type="number" style="width:70px" value="${T[a[1]]}" onchange="T[${a[1]}]=+this.value;save()"></label>`).join('')}<span class="leg">Dưới mức Đạt là Chưa đạt.</span></div>
+<div class="leg">Điểm trừ nhập số âm. Lỗi đặc biệt nghiêm trọng luôn xếp Chưa đạt. Đổi điểm hoặc nhóm sẽ tính lại cả các tháng đã ghi.</div></div>
+<div class="card tw"><div class="row"><b>Tiêu chí</b><button class="bt" onclick="addCr()">Thêm tiêu chí</button></div><table><tr><th>Tên</th><th>Nhóm</th><th></th></tr>
+${C.map((c,i)=>`<tr${c[2]?' style="opacity:.5"':''}><td><input style="width:100%" value="${esc(c[0])}" onchange="C[${i}][0]=this.value;save()"></td><td><select onchange="C[${i}][1]=this.value;save()">${Object.keys(G).map(g=>`<option value="${g}"${c[1]===g?' selected':''}>${G[g]}</option>`).join('')}</select></td><td><button class="x" onclick="C[${i}][2]=${c[2]?0:1};save()">${c[2]?'Hiện':'Ẩn'}</button></td></tr>`).join('')}</table></div>`}
+function addCr(){C.push(['Tiêu chí mới','nhe']);save()}
+function render(){
+  $('#nav').innerHTML=[['tq','Tổng quan'],['dg','Đánh giá'],['tk','Tổng kết'],['hs','Học sinh'],['cd','Cài đặt']].map(a=>`<button class="${tab===a[0]?'on':''}" onclick="go('${a[0]}')">${a[1]}</button>`).join('');
+  $('#main').innerHTML=(window.LS?'<div class="warn">Dữ liệu được lưu ngay trong trình duyệt của thiết bị này; mở bằng máy hoặc trình duyệt khác sẽ không thấy. Nên xuất Excel để sao lưu.</div>':db?'':'<div class="warn">Chưa đăng nhập hoặc chưa có kho dữ liệu: dữ liệu chỉ tồn tại trong lần mở này và sẽ mất khi đóng trang.</div>')+({tq:vTq,dg:vDg,tk:vTk,hs:vHs,cd:vCd})[tab]()}
+render();
+(async()=>{try{if(typeof claude==='undefined'){window.LS=true;try{const r=localStorage.getItem('sohk');if(r){S=Object.assign({st:[],lg:[]},JSON.parse(r));if(S.cfg){C=S.cfg.C;D=S.cfg.D;T=S.cfg.T}}}catch(e){}render();return}const u=await claude.use('user');uid=u?await u.id():null;db=uid?await claude.use('db'):null;dl=await claude.use('downloads');
+  if(db){path='data/users/'+uid+'/lop';const s=await db.doc(path).get();if(s.exists){S=Object.assign({st:[],lg:[]},s.data());if(S.cfg){C=S.cfg.C;D=S.cfg.D;T=S.cfg.T}}}}catch(e){db=null}render()})();
+</script>
+</body>
+</html>

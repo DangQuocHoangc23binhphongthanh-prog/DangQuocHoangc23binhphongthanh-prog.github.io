@@ -149,25 +149,26 @@ let GH=null,sha=null,SY='',dirty=false,tm2;
 const API='https://api.github.com/repos/DangQuocHoangc23binhphongthanh-prog/sohk-du-lieu/contents/data.json';
 const hd=()=>({Authorization:'Bearer '+GH,Accept:'application/vnd.github+json'});
 const b64=t=>btoa(unescape(encodeURIComponent(t))),ub64=t=>decodeURIComponent(escape(atob(t.replace(/\s/g,''))));
+async function er(r){let m='';try{m=(await r.json()).message||''}catch(e){}return r.status===401?'mã không đúng hoặc đã hết hạn':r.status===403?'mã chưa đủ quyền. Cần chọn đúng kho sohk-du-lieu và đặt quyền Contents là Read and write (GitHub báo: '+m+')':r.status+(m?' '+m:'')}
 const sy=m=>{SY=m;const e=$('#sy');if(e)e.textContent=m};
 const hm=()=>new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
 async function pull(){if(!GH||dirty)return;try{const r=await fetch(API,{headers:hd(),cache:'no-store'});
   if(r.status===404){sha=null;sy('Kho chưa có dữ liệu.');return}
-  if(!r.ok)throw new Error(r.status===401?'mã truy cập không đúng hoặc hết hạn':r.status);
+  if(!r.ok)throw new Error(await er(r));
   const j=await r.json();sha=j.sha;S=Object.assign({st:[],lg:[]},JSON.parse(ub64(j.content)));
   if(S.cfg){C=S.cfg.C;D=S.cfg.D;T=S.cfg.T}
   try{localStorage.setItem('sohk',JSON.stringify(S))}catch(e){}sy('Đã tải lúc '+hm());render()}catch(e){sy('Chưa đồng bộ được: '+e.message)}}
 async function push(retry){if(!GH)return;try{S.cfg={C,D,T};
   const r=await fetch(API,{method:'PUT',headers:{...hd(),'Content-Type':'application/json'},body:JSON.stringify({message:'cap nhat',content:b64(JSON.stringify(S)),...(sha?{sha}:{})})});
   if((r.status===409||r.status===422)&&!retry){const g=await fetch(API,{headers:hd(),cache:'no-store'});sha=g.ok?(await g.json()).sha:null;return push(true)}
-  if(!r.ok)throw new Error(r.status===401?'mã truy cập không đúng hoặc hết hạn':r.status);
+  if(!r.ok)throw new Error(await er(r));
   sha=(await r.json()).content.sha;dirty=false;sy('Đã lưu lúc '+hm())}catch(e){sy('Chưa lưu được lên kho: '+e.message)}}
 function vSy(){return `<div class="card"><b>Đồng bộ dữ liệu giữa các thiết bị</b>${GH?`<div class="row"><span class="leg">Đã kết nối kho riêng tư. ${esc(SY)}</span><button class="bt o" onclick="dirty=false;pull()">Tải lại từ kho</button><button class="bt o" onclick="syOff()">Ngắt kết nối</button></div>`:`<div class="leg">Dán mã truy cập (token) của kho dữ liệu riêng tư. Làm một lần trên mỗi thiết bị. Không chia sẻ mã này cho người khác.</div><div class="row"><input id="tk" type="password" placeholder="github_pat_..." style="flex:1;min-width:220px"><button class="bt" onclick="syOn()">Kết nối</button></div>`}</div>`}
 async function syOn(){const v=$('#tk').value.trim();if(!v)return;GH=v;try{localStorage.setItem('sohk_tk',v)}catch(e){}
   try{const r=await fetch(API,{headers:hd(),cache:'no-store'});
     if(r.status===404){sha=null;await push()}
     else if(r.ok){const j=await r.json();sha=j.sha;if(S.st.length&&!confirm('Kho đã có dữ liệu. Bấm OK để dùng dữ liệu trên kho (dữ liệu đang có trên máy này sẽ bị thay). Bấm Hủy để lấy dữ liệu máy này ghi đè lên kho.'))await push();else await pull()}
-    else throw new Error(r.status===401?'mã truy cập không đúng':r.status)}
+    else throw new Error(await er(r))}
   catch(e){GH=null;try{localStorage.removeItem('sohk_tk')}catch(x){}alert('Không kết nối được: '+e.message)}render()}
 function syOff(){GH=null;try{localStorage.removeItem('sohk_tk')}catch(e){}SY='';render()}
 function vCd(){return `${window.LS?vSy():''}<div class="card"><b>Điểm mỗi lần ghi</b><div class="row">${['nhe','ncp','vkp','ntr','td'].map(g=>`<label>${G[g]} <input type="number" style="width:70px" value="${D[g]}" onchange="D['${g}']=+this.value;save()"></label>`).join('')}</div>

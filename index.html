@@ -49,14 +49,14 @@ th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)
 <body>
 <header>
   <h1>Sổ hạnh kiểm lớp chủ nhiệm</h1>
-  <div class="sub">Trường THPT Chê Ghê-va-ra · mỗi tháng bắt đầu từ 100 điểm, lỗi các tuần trừ dồn</div>
+  <div class="sub">Trường THPT Chê Ghê-va-ra · mỗi tuần bắt đầu từ 100 điểm · học kỳ 1: 18 tuần, học kỳ 2: 17 tuần</div>
   <nav id="nav"></nav>
 </header>
 <main id="main"></main>
 <script>
 const LV=['Tốt','Khá','Đạt','Chưa đạt'],K='tkdc';
 const G={nhe:'Lỗi nhẹ',ncp:'Nghỉ có phép',vkp:'Vắng không phép',ntr:'Lỗi nghiêm trọng',dbt:'Lỗi đặc biệt nghiêm trọng',td:'Tuyên dương'};
-let D={nhe:-5,ncp:-5,vkp:-15,ntr:-30,dbt:0,td:5},T=[90,75,60];
+let D={nhe:-5,ncp:-5,vkp:-15,ntr:-30,dbt:0,td:5},T=[90,75,60],W0='2026-09-07';
 let C=[['Đi học muộn','nhe'],['Sai đồng phục','nhe'],['Sai tác phong, đầu tóc (nhuộm tóc, móng tay, bông tai)','nhe'],['Giày cao gót quá 5 cm','nhe'],['Xả rác, không giữ vệ sinh chung','nhe'],['Mang thức ăn, nước ngọt vào lớp','nhe'],['Không tắt đèn, quạt khi rời phòng','nhe'],['Không chuẩn bị bài, không làm bài tập','nhe'],['Nói chuyện, làm việc riêng trong giờ học','nhe'],['Mất trật tự khi sinh hoạt dưới cờ, sinh hoạt tập thể','nhe'],
 ['Nghỉ có phép (không có giấy xác nhận y tế)','ncp'],
 ['Vắng không phép','vkp'],['Nghỉ trái buổi, cúp tiết, bỏ lao động hoặc hoạt động tập thể','vkp'],
@@ -74,12 +74,13 @@ let wk=mon(fmt(new Date()));
 const name=i=>(S.st.find(x=>x.id===i)||{}).n||'(đã xóa)';
 
 function calc(sid,mk){let p=100,nh=0,td=0,x=false;
-  for(const l of S.lg){if(l.s!==sid||l.w.slice(0,7)!==mk||!C[l.c])continue;const g=C[l.c][1];
+  for(const l of S.lg){if(l.s!==sid||l.w!==mk||!C[l.c])continue;const g=C[l.c][1];
     if(g==='dbt')x=true;else if(g==='td')td++;else{p+=D[g];if(g==='nhe')nh++}}
   p+=D.td*Math.min(td,nh);
   return{p,x,lv:x?3:p>=T[0]?0:p>=T[1]?1:p>=T[2]?2:3}}
-function months(){const s=new Set(S.lg.map(l=>l.w.slice(0,7)));s.add(wk.slice(0,7));return[...s].sort()}
-function hk(sid,h){const ms=months().filter(m=>(+m.slice(5)>=8)===(h===1));if(!ms.length)return null;
+const wn=w=>Math.round((new Date(w+'T00:00:00')-new Date(W0+'T00:00:00'))/6048e5)+1;
+function weeks(){const n=Math.min(35,Math.max(1,wn(wk),wn(mon(fmt(new Date()))),...S.lg.map(l=>wn(l.w))));return Array.from({length:n},(_,i)=>add(W0,i*7))}
+function hk(sid,h){const ms=weeks().filter(w=>(wn(w)<=18)===(h===1));if(!ms.length)return null;
   const r=ms.map(m=>calc(sid,m)),n=[0,0,0,0];r.forEach(a=>n[a.lv]++);
   const mx=Math.max(...n);let lv=n[r[r.length-1].lv]===mx?r[r.length-1].lv:n.indexOf(mx);
   if(r.some(a=>a.x))lv=Math.max(lv,2);return lv}
@@ -109,32 +110,32 @@ async function out(fn,aoa){if(!window.XLSX)return alert('Chưa tải được th
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),'Sheet1');
   const d=XLSX.write(wb,{bookType:'xlsx',type:'array'});try{if(dl)await dl.save({filename:fn,data:d});else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([d]));a.download=fn;a.click()}}catch(e){}}
 const tpl=()=>out('mau-danh-sach-hoc-sinh.xlsx',[['Họ và tên','Phụ huynh (ví dụ: Mẹ - Nguyễn Thị Hoa)','Số điện thoại'],['Nguyễn Văn An','Mẹ - Nguyễn Thị Hoa','0912345678']]);
-function exp(){const ms=months();out('tong-ket-hanh-kiem.xlsx',[['Họ và tên',...ms.map(m=>m.slice(5)+'/'+m.slice(0,4)),'Học kỳ 1','Học kỳ 2','Cả năm'],
+function exp(){const ms=weeks();out('tong-ket-hanh-kiem.xlsx',[['Họ và tên',...ms.map(m=>'Tuần '+wn(m)),'Học kỳ 1','Học kỳ 2','Cả năm'],
   ...S.st.map(s=>[s.n,...ms.map(m=>{const a=calc(s.id,m);return LV[a.lv]+' ('+(a.x?'đặc biệt':a.p)+')'}),...[hv(s.id,1),hv(s.id,2),yr(s.id)].map(v=>v==null?'':LV[v])])])}
 
-function vTq(){const mk=wk.slice(0,7),ls=S.lg.filter(l=>l.w===wk),n=[0,0,0,0];
+function vTq(){const mk=wk,ls=S.lg.filter(l=>l.w===wk),n=[0,0,0,0];
   S.st.forEach(s=>n[calc(s.id,mk).lv]++);const t=S.st.length||1;
   const er=ls.filter(l=>!['td'].includes(C[l.c][1])).length,pr=ls.length-er;
   return `<div class="grid"><div class="card"><div class="num">${S.st.length}</div><div class="lab">học sinh trong lớp</div></div>
   <div class="card"><div class="num">${er}</div><div class="lab">lỗi ghi nhận tuần ${dm(wk)}</div></div>
   <div class="card"><div class="num">${pr}</div><div class="lab">tuyên dương tuần ${dm(wk)}</div></div></div>
-  <div class="card"><b>Xếp loại tháng ${mk.slice(5)}/${mk.slice(0,4)} (tính đến hết tuần đang xem)</b>
+  <div class="card"><b>Xếp loại tuần ${wn(wk)} (${dm(wk)} – ${dm(add(wk,6))})</b>
   ${LV.map((l,i)=>`<div class="bar"><span style="width:70px">${l}</span><i style="width:${Math.max(n[i]/t*100,1)}%;background:var(--${K[i]})"></i><span>${n[i]} học sinh</span></div>`).join('')}
   <div class="leg">Tốt từ ${T[0]} điểm · Khá ${T[1]}–${T[0]-1} · Đạt ${T[2]}–${T[1]-1} · Chưa đạt dưới ${T[2]} hoặc có lỗi đặc biệt nghiêm trọng</div></div>`}
 
 function vDg(){if(!S.st.length)return'<div class="card">Chưa có học sinh. Vào mục Học sinh để nhập danh sách.</div>';
-  const mk=wk.slice(0,7);let o='';for(const g in G)o+=`<optgroup label="${G[g]+(g==='dbt'?' (Chưa đạt)':' ('+(D[g]>0?'+':'')+D[g]+')')}">`+C.map((c,i)=>c[1]===g&&!c[2]?`<option value="${i}"${i===cr?' selected':''}>${esc(c[0])}</option>`:'').join('')+'</optgroup>';
-  return `<div class="card"><div class="row"><label>Tuần <input type="date" value="${wk}" onchange="setWk(this.value)"></label><b>${dm(wk)} – ${dm(add(wk,6))}</b>
+  const mk=wk;let o='';for(const g in G)o+=`<optgroup label="${G[g]+(g==='dbt'?' (Chưa đạt)':' ('+(D[g]>0?'+':'')+D[g]+')')}">`+C.map((c,i)=>c[1]===g&&!c[2]?`<option value="${i}"${i===cr?' selected':''}>${esc(c[0])}</option>`:'').join('')+'</optgroup>';
+  return `<div class="card"><div class="row"><label>Tuần <input type="date" value="${wk}" onchange="setWk(this.value)"></label><b>Tuần ${wn(wk)}: ${dm(wk)} – ${dm(add(wk,6))}</b>
   <button class="bt o" onclick="copyPrev()">Sao chép tuần trước</button></div>
   <div class="row"><select onchange="cr=+this.value" style="flex:1;min-width:220px">${o}</select><button class="bt" onclick="addLog()">Ghi cho học sinh đã chọn</button></div>
   <div class="row"><button class="bt o" onclick="pickAll(true)">Chọn tất cả</button><button class="bt o" onclick="pickAll(false)">Bỏ chọn</button><span class="leg">Đã chọn: ${sel.size}</span></div>
   <div class="pick">${S.st.map(s=>`<label><input type="checkbox" ${sel.has(s.id)?'checked':''} onchange="tog('${s.id}')"> ${esc(s.n)}</label>`).join('')}</div></div>
-  <div class="card tw"><table><tr><th>Học sinh</th><th>Ghi nhận tuần này</th><th>Tháng ${mk.slice(5)}</th></tr>
+  <div class="card tw"><table><tr><th>Học sinh</th><th>Ghi nhận tuần này</th><th>Tuần ${wn(wk)}</th></tr>
   ${S.st.map(s=>{const a=calc(s.id,mk);return `<tr><td>${esc(s.n)}</td><td>${S.lg.filter(l=>l.s===s.id&&l.w===wk).map(l=>`<span class="ch ${C[l.c][1]}">${esc(C[l.c][0])}<button class="x" onclick="delLog('${l.id}')" title="Xóa">×</button></span>`).join('')||'<span class="leg">Chưa có</span>'}</td><td>${bd(a.lv,a.x?null:a.p)}</td></tr>`}).join('')}</table></div>`}
 
-function vTk(){const ms=months();
-  return `<div class="card"><div class="row"><button class="bt" onclick="exp()">Xuất Excel</button><span class="leg">Học kỳ: lấy mức nhiều nhất trong các tháng, hòa thì lấy tháng cuối. Cả năm: ưu tiên học kỳ 2. GVCN có thể chỉnh tay ở ô chọn dưới mỗi mức. Tháng 8–12 tính học kỳ 1, tháng 1–7 tính học kỳ 2.</span></div>
-  <div class="tw"><table><tr><th>Họ và tên</th>${ms.map(m=>`<th>${m.slice(5)}/${m.slice(0,4)}</th>`).join('')}<th>HK1</th><th>HK2</th><th>Cả năm</th></tr>
+function vTk(){const ms=weeks();
+  return `<div class="card"><div class="row"><button class="bt" onclick="exp()">Xuất Excel</button><span class="leg">Học kỳ 1 gồm tuần 1–18, học kỳ 2 gồm tuần 19–35 (tuần 1 bắt đầu 07/09/2026). Mức học kỳ lấy mức nhiều nhất trong các tuần, hòa thì lấy tuần cuối kỳ. Cả năm: ưu tiên học kỳ 2. GVCN có thể chỉnh tay ở ô chọn dưới mỗi mức.</span></div>
+  <div class="tw"><table><tr><th>Họ và tên</th>${ms.map(m=>`<th title="${dm(m)}">T${wn(m)}</th>`).join('')}<th>HK1</th><th>HK2</th><th>Cả năm</th></tr>
   ${S.st.map(s=>`<tr><td>${esc(s.n)}</td>${ms.map(m=>{const a=calc(s.id,m);return `<td>${bd(a.lv,a.x?null:a.p)}</td>`}).join('')}<td>${ovc(s.id,'HK1',hv(s.id,1))}</td><td>${ovc(s.id,'HK2',hv(s.id,2))}</td><td>${ovc(s.id,'NAM',yr(s.id))}</td></tr>`).join('')}</table></div></div>`}
 
 function vHs(){return `<div class="card"><div class="row"><button class="bt o" onclick="tpl()">Tải file mẫu</button>

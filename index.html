@@ -93,7 +93,7 @@ function setOv(s,k,v){S.ov=S.ov||{};if(v==='')delete S.ov[s+'|'+k];else S.ov[s+'
 const ovc=(s,k,v)=>`${bd(v)}<br><select style="font-size:12px;padding:2px" onchange="setOv('${s}','${k}',this.value)"><option value="">Tự động</option>${LV.map((l,i)=>`<option value="${i}"${ov(s,k)===i?' selected':''}>${l}</option>`).join('')}</select>`;
 const bd=(lv,p)=>lv==null?'–':`<span class="b ${K[lv]}">${LV[lv]}${p!=null?' · '+p:''}</span>`;
 
-function save(){render();if(window.LS){try{S.cfg={C,D,T};localStorage.setItem('sohk',JSON.stringify(R))}catch(e){}if(GH){dirty=true;clearTimeout(tm2);tm2=setTimeout(push,800)}if(GS){clearTimeout(tm3);tm3=setTimeout(gsPush,4000)}return}if(!db)return;clearTimeout(tm);tm=setTimeout(async()=>{try{S.cfg={C,D,T};await db.doc(path).set(S)}catch(e){alert('Chưa lưu được dữ liệu: '+(e.message||e.code||e))}},500)}
+function save(){render();if(window.LS){try{S.cfg={C,D,T};localStorage.setItem('sohk',JSON.stringify(R))}catch(e){}if(GH){dirty=true;clearTimeout(tm2);tm2=setTimeout(push,800)}if(GS){gsDirty=true;clearTimeout(tm3);tm3=setTimeout(gsPush,4000)}return}if(!db)return;clearTimeout(tm);tm=setTimeout(async()=>{try{S.cfg={C,D,T};await db.doc(path).set(S)}catch(e){alert('Chưa lưu được dữ liệu: '+(e.message||e.code||e))}},500)}
 function go(t){tab=t;render()}
 function setWk(v){if(v){wk=mon(v);render()}}
 function addLog(){if(!sel.size)return alert('Hãy tích chọn ít nhất một học sinh.');sel.forEach(s=>S.lg.push({id:id8(),s,w:wk,c:cr}));sel.clear();save()}
@@ -172,7 +172,7 @@ async function syOn(){const v=$('#tk').value.trim();if(!v)return;GH=v;try{localS
     else throw new Error(await er(r))}
   catch(e){GH=null;try{localStorage.removeItem('sohk_tk')}catch(x){}alert('Không kết nối được: '+e.message)}render()}
 function syOff(){GH=null;try{localStorage.removeItem('sohk_tk')}catch(e){}SY='';render()}
-let GS=null,gsMsg='',tm3;
+let GS=null,gsMsg='',tm3,gsDirty=false;
 const GS_URL='https://script.google.com/macros/s/AKfycbySDcIaJ4ddhegI3CvQOZMrk0EBwvBexZSrTue6E4ojmSl819ewcFs5jppgLFyKN1v_/exec';
 const gsy=m=>{gsMsg=m;const e=$('#gsy');if(e)e.textContent=m};
 function gsSheets(){const ws=weeks(),pf=curN().replace(/[\[\]*?:\/\\]/g,'').slice(0,40)+' - ';const o={
@@ -181,11 +181,23 @@ function gsSheets(){const ws=weeks(),pf=curN().replace(/[\[\]*?:\/\\]/g,'').slic
  'Xếp loại tuần':[['Học sinh',...ws.map(w=>'Tuần '+wn(w))],...S.st.map(s=>[s.n,...ws.map(w=>{const a=calc(s.id,w);return LV[a.lv]+' ('+(a.x?'CD':a.p)+')'})])],
  'Tổng kết':[['Học sinh','Học kỳ 1','Học kỳ 2','Cả năm'],...S.st.map(s=>[s.n,...[hv(s.id,1),hv(s.id,2),yr(s.id)].map(v=>v==null?'':LV[v])])]};const r={};for(const k in o)r[pf+k]=o[k];return r}
 async function gsPush(){if(!GS)return;const body=JSON.stringify({key:GS.k,data:R,sheets:gsSheets()}),o={method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body};gsy('Đang gửi...');
- try{const r=await fetch(GS.u,o);const j=await r.json();gsy(j.ok?'Đã gửi lúc '+hm():'Sheet báo lỗi: '+(j.error||'không rõ'))}
- catch(e){try{await fetch(GS.u,{...o,mode:'no-cors'});gsy('Đã gửi lúc '+hm()+' (chưa xác nhận được, hãy mở Sheet để kiểm tra)')}catch(x){gsy('Chưa gửi được: '+x.message)}}}
-function vGs(){return `<div class="card"><b>Gửi sang Google Sheet</b>${GS?`<div class="row"><span class="leg">Đã cài đặt. <span id="gsy">${esc(gsMsg)}</span></span><button class="bt" onclick="gsPush()">Gửi ngay</button><button class="bt o" onclick="gsOff()">Ngắt kết nối</button></div><div class="leg">Sau mỗi lần ghi, dữ liệu tự gửi sang Sheet sau vài giây.</div>`:`<div class="leg">Địa chỉ script đã điền sẵn. Chỉ cần nhập mật khẩu đã đặt trong mã Apps Script. Làm một lần trên mỗi thiết bị.</div><div class="row"><input id="gu" value="${GS_URL}" placeholder="https://script.google.com/.../exec" style="flex:1;min-width:240px"><input id="gk" type="password" placeholder="Mật khẩu" style="width:180px"><button class="bt" onclick="gsOn()">Kết nối</button></div>`}</div>`}
-function gsOn(){const u=$('#gu').value.trim(),k=$('#gk').value;if(!/^https:\/\/script\.google\.com\/.+\/exec$/.test(u)||!k)return alert('Hãy dán đúng địa chỉ script (https://script.google.com/.../exec) và nhập mật khẩu.');
-  GS={u,k};try{localStorage.setItem('sohk_gs',JSON.stringify(GS))}catch(e){}render();gsPush()}
+ try{const r=await fetch(GS.u,o);const j=await r.json();if(j.ok)gsDirty=false;gsy(j.ok?'Đã gửi lúc '+hm():'Sheet báo lỗi: '+(j.error||'không rõ'))}
+ catch(e){try{await fetch(GS.u,{...o,mode:'no-cors'});gsDirty=false;gsy('Đã gửi lúc '+hm()+' (chưa xác nhận được, hãy mở Sheet để kiểm tra)')}catch(x){gsy('Chưa gửi được: '+x.message)}}}
+function vGs(){return `<div class="card"><b>Gửi sang Google Sheet</b>${GS?`<div class="row"><span class="leg">Đã cài đặt. <span id="gsy">${esc(gsMsg)}</span></span><button class="bt o" onclick="gsPull(true)">Tải từ Sheet</button><button class="bt" onclick="gsPush()">Gửi ngay</button><button class="bt o" onclick="gsOff()">Ngắt kết nối</button></div><div class="leg">Sau mỗi lần ghi, dữ liệu tự gửi sang Sheet sau vài giây.</div>`:`<div class="leg">Địa chỉ script đã điền sẵn. Chỉ cần nhập mật khẩu đã đặt trong mã Apps Script. Làm một lần trên mỗi thiết bị.</div><div class="row"><input id="gu" value="${GS_URL}" placeholder="https://script.google.com/.../exec" style="flex:1;min-width:240px"><input id="gk" type="password" placeholder="Mật khẩu" style="width:180px"><button class="bt" onclick="gsOn()">Kết nối</button></div>`}</div>`}
+const hasSt=o=>!!(o&&o.cls&&Object.values(o.d||{}).some(c=>(c.st||[]).length));
+async function gsLoad(){const r=await fetch(GS.u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({key:GS.k,action:'load'})});const j=await r.json();if(!j.ok)throw new Error(j.error||'không rõ');return j.data}
+function gsApply(d,m){setR(d);try{localStorage.setItem('sohk',JSON.stringify(R))}catch(e){}gsy(m+' lúc '+hm());render()}
+async function gsPull(man){if(!GS||gsDirty)return;try{const d=await gsLoad();
+  if(!hasSt(d)){if(man)alert('Sheet chưa có dữ liệu để tải.');return}
+  if(man&&!confirm('Dùng dữ liệu trên Sheet? Dữ liệu đang có trên máy này sẽ bị thay.'))return;
+  gsApply(d,'Đã tải từ Sheet')}catch(e){gsy('Chưa tải được từ Sheet: '+e.message);if(man)alert('Chưa tải được từ Sheet: '+e.message)}}
+async function gsOn(){const u=$('#gu').value.trim(),k=$('#gk').value;if(!/^https:\/\/script\.google\.com\/.+\/exec$/.test(u)||!k)return alert('Hãy dán đúng địa chỉ script (https://script.google.com/.../exec) và nhập mật khẩu.');
+  GS={u,k};
+  try{const d=await gsLoad();
+    if(hasSt(d)){const mine=Object.values(R.d).some(c=>c.st.length);
+      if(!mine||confirm('Sheet đã có dữ liệu các lớp. Bấm OK để dùng dữ liệu trên Sheet (dữ liệu đang có trên máy này sẽ bị thay). Bấm Hủy để lấy dữ liệu máy này ghi đè lên Sheet.')){try{localStorage.setItem('sohk_gs',JSON.stringify(GS))}catch(e){}gsApply(d,'Đã tải từ Sheet');return}}
+  }catch(e){GS=null;return alert('Chưa đọc được dữ liệu từ Sheet nên chưa kết nối, để tránh ghi đè dữ liệu cũ. Lý do: '+e.message+'. Kiểm tra mật khẩu, và mã Apps Script phải là bản mới có chức năng tải dữ liệu, đã triển khai "Phiên bản mới".')}
+  try{localStorage.setItem('sohk_gs',JSON.stringify(GS))}catch(e){}render();gsPush()}
 function gsOff(){GS=null;gsMsg='';try{localStorage.removeItem('sohk_gs')}catch(e){}render()}
 const curN=()=>R.cls.find(c=>c.id===R.cur).n;
 function loadCfg(){if(S.cfg){C=S.cfg.C;D=S.cfg.D;T=S.cfg.T}}
@@ -210,7 +222,7 @@ function render(){
   $('#cls').innerHTML=window.LS?vCls():'';$('#nav').innerHTML=[['tq','Tổng quan'],['dg','Đánh giá'],['tk','Tổng kết'],['hs','Học sinh'],['cd','Cài đặt']].map(a=>`<button class="${tab===a[0]?'on':''}" onclick="go('${a[0]}')">${a[1]}</button>`).join('');
   $('#main').innerHTML=(window.LS?(GH?'<div class="warn" style="background:#dcefdc;color:#1d4a2c">Đã kết nối kho dữ liệu riêng tư. <span id="sy">'+esc(SY)+'</span></div>':'<div class="warn">Dữ liệu đang chỉ lưu trong trình duyệt của thiết bị này. Vào Cài đặt để kết nối kho đồng bộ với điện thoại, hoặc xuất Excel để sao lưu.</div>'):db?'':'<div class="warn">Chưa đăng nhập hoặc chưa có kho dữ liệu: dữ liệu chỉ tồn tại trong lần mở này và sẽ mất khi đóng trang.</div>')+({tq:vTq,dg:vDg,tk:vTk,hs:vHs,cd:vCd})[tab]()}
 render();
-(async()=>{try{if(typeof claude==='undefined'){window.LS=true;try{const r=localStorage.getItem('sohk');if(r){setR(JSON.parse(r))}}catch(e){}try{GH=localStorage.getItem('sohk_tk')}catch(e){}try{GS=JSON.parse(localStorage.getItem('sohk_gs'))}catch(e){}render();if(GH)pull();document.addEventListener('visibilitychange',()=>{if(!document.hidden&&GH&&!dirty)pull()});return}const u=await claude.use('user');uid=u?await u.id():null;db=uid?await claude.use('db'):null;dl=await claude.use('downloads');
+(async()=>{try{if(typeof claude==='undefined'){window.LS=true;try{const r=localStorage.getItem('sohk');if(r){setR(JSON.parse(r))}}catch(e){}try{GH=localStorage.getItem('sohk_tk')}catch(e){}try{GS=JSON.parse(localStorage.getItem('sohk_gs'))}catch(e){}render();if(GH)pull();else if(GS)gsPull();document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(GH){if(!dirty)pull()}else if(GS&&!gsDirty)gsPull()});return}const u=await claude.use('user');uid=u?await u.id():null;db=uid?await claude.use('db'):null;dl=await claude.use('downloads');
   if(db){path='data/users/'+uid+'/lop';const s=await db.doc(path).get();if(s.exists){S=Object.assign({st:[],lg:[]},s.data());if(S.cfg){C=S.cfg.C;D=S.cfg.D;T=S.cfg.T}}}}catch(e){db=null}render()})();
 </script>
 </body>

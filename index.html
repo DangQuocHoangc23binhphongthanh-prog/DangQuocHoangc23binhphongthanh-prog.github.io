@@ -172,7 +172,7 @@ async function syOn(){const v=$('#tk').value.trim();if(!v)return;GH=v;try{localS
   catch(e){GH=null;try{localStorage.removeItem('sohk_tk')}catch(x){}alert('Không kết nối được: '+e.message)}render()}
 function syOff(){GH=null;try{localStorage.removeItem('sohk_tk')}catch(e){}SY='';render()}
 let GS=null,gsMsg='',tm3;
-const GS_URL='https://script.google.com/a/macros/cheguevara.edu.vn/s/AKfycbxIktbfJzFMO1xw74g_S6EvBL8CvrBsnYpx2SDReQY7mJpZjbSKRpMTnwFnxON4OGOM/exec';
+const GS_URL='https://script.google.com/macros/s/AKfycbySDcIaJ4ddhegI3CvQOZMrk0EBwvBexZSrTue6E4ojmSl819ewcFs5jppgLFyKN1v_/exec';
 const gsy=m=>{gsMsg=m;const e=$('#gsy');if(e)e.textContent=m};
 function gsSheets(){const ws=weeks();return{
  'Học sinh':[['STT','Họ và tên','Phụ huynh','Số điện thoại'],...S.st.map((s,i)=>[i+1,s.n,s.p,s.ph])],

@@ -173,7 +173,7 @@ async function syOn(){const v=$('#tk').value.trim();if(!v)return;GH=v;try{localS
   catch(e){GH=null;try{localStorage.removeItem('sohk_tk')}catch(x){}alert('Không kết nối được: '+e.message)}render()}
 function syOff(){GH=null;try{localStorage.removeItem('sohk_tk')}catch(e){}SY='';render()}
 let GS=null,gsMsg='',tm3,gsDirty=false;
-const GS_URL='https://script.google.com/macros/s/AKfycbySDcIaJ4ddhegI3CvQOZMrk0EBwvBexZSrTue6E4ojmSl819ewcFs5jppgLFyKN1v_/exec';
+const GS_URL='https://script.google.com/macros/s/AKfycby09DNkBiGavv2ICuU35EIQVj-BdnPHu6mC9w9KsbGdQaIgqIu31gApnCmIWPMTBJYG/exec';
 const gsy=m=>{gsMsg=m;const e=$('#gsy');if(e)e.textContent=m};
 function gsSheets(){const ws=weeks(),pf=curN().replace(/[\[\]*?:\/\\]/g,'').slice(0,40)+' - ';const o={
  'Học sinh':[['STT','Họ và tên','Phụ huynh','Số điện thoại'],...S.st.map((s,i)=>[i+1,s.n,s.p,s.ph])],
@@ -222,7 +222,7 @@ function render(){
   $('#cls').innerHTML=window.LS?vCls():'';$('#nav').innerHTML=[['tq','Tổng quan'],['dg','Đánh giá'],['tk','Tổng kết'],['hs','Học sinh'],['cd','Cài đặt']].map(a=>`<button class="${tab===a[0]?'on':''}" onclick="go('${a[0]}')">${a[1]}</button>`).join('');
   $('#main').innerHTML=(window.LS?(GH?'<div class="warn" style="background:#dcefdc;color:#1d4a2c">Đã kết nối kho dữ liệu riêng tư. <span id="sy">'+esc(SY)+'</span></div>':'<div class="warn">Dữ liệu đang chỉ lưu trong trình duyệt của thiết bị này. Vào Cài đặt để kết nối kho đồng bộ với điện thoại, hoặc xuất Excel để sao lưu.</div>'):db?'':'<div class="warn">Chưa đăng nhập hoặc chưa có kho dữ liệu: dữ liệu chỉ tồn tại trong lần mở này và sẽ mất khi đóng trang.</div>')+({tq:vTq,dg:vDg,tk:vTk,hs:vHs,cd:vCd})[tab]()}
 render();
-(async()=>{try{if(typeof claude==='undefined'){window.LS=true;try{const r=localStorage.getItem('sohk');if(r){setR(JSON.parse(r))}}catch(e){}try{GH=localStorage.getItem('sohk_tk')}catch(e){}try{GS=JSON.parse(localStorage.getItem('sohk_gs'))}catch(e){}render();if(GH)pull();else if(GS)gsPull();document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(GH){if(!dirty)pull()}else if(GS&&!gsDirty)gsPull()});return}const u=await claude.use('user');uid=u?await u.id():null;db=uid?await claude.use('db'):null;dl=await claude.use('downloads');
+(async()=>{try{if(typeof claude==='undefined'){window.LS=true;try{const r=localStorage.getItem('sohk');if(r){setR(JSON.parse(r))}}catch(e){}try{GH=localStorage.getItem('sohk_tk')}catch(e){}try{GS=JSON.parse(localStorage.getItem('sohk_gs'))}catch(e){}if(GS&&GS.u!==GS_URL){GS.u=GS_URL;try{localStorage.setItem('sohk_gs',JSON.stringify(GS))}catch(e){}}render();if(GH)pull();else if(GS)gsPull();document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(GH){if(!dirty)pull()}else if(GS&&!gsDirty)gsPull()});return}const u=await claude.use('user');uid=u?await u.id():null;db=uid?await claude.use('db'):null;dl=await claude.use('downloads');
   if(db){path='data/users/'+uid+'/lop';const s=await db.doc(path).get();if(s.exists){S=Object.assign({st:[],lg:[]},s.data());if(S.cfg){C=S.cfg.C;D=S.cfg.D;T=S.cfg.T}}}}catch(e){db=null}render()})();
 </script>
 </body>

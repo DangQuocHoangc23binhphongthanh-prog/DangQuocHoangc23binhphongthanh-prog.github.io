@@ -172,6 +172,7 @@ async function syOn(){const v=$('#tk').value.trim();if(!v)return;GH=v;try{localS
   catch(e){GH=null;try{localStorage.removeItem('sohk_tk')}catch(x){}alert('Không kết nối được: '+e.message)}render()}
 function syOff(){GH=null;try{localStorage.removeItem('sohk_tk')}catch(e){}SY='';render()}
 let GS=null,gsMsg='',tm3;
+const GS_URL='https://script.google.com/a/macros/cheguevara.edu.vn/s/AKfycbxIktbfJzFMO1xw74g_S6EvBL8CvrBsnYpx2SDReQY7mJpZjbSKRpMTnwFnxON4OGOM/exec';
 const gsy=m=>{gsMsg=m;const e=$('#gsy');if(e)e.textContent=m};
 function gsSheets(){const ws=weeks();return{
  'Học sinh':[['STT','Họ và tên','Phụ huynh','Số điện thoại'],...S.st.map((s,i)=>[i+1,s.n,s.p,s.ph])],
@@ -181,7 +182,7 @@ function gsSheets(){const ws=weeks();return{
 async function gsPush(){if(!GS)return;const body=JSON.stringify({key:GS.k,data:S,sheets:gsSheets()}),o={method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body};gsy('Đang gửi...');
  try{const r=await fetch(GS.u,o);const j=await r.json();gsy(j.ok?'Đã gửi lúc '+hm():'Sheet báo lỗi: '+(j.error||'không rõ'))}
  catch(e){try{await fetch(GS.u,{...o,mode:'no-cors'});gsy('Đã gửi lúc '+hm()+' (chưa xác nhận được, hãy mở Sheet để kiểm tra)')}catch(x){gsy('Chưa gửi được: '+x.message)}}}
-function vGs(){return `<div class="card"><b>Gửi sang Google Sheet</b>${GS?`<div class="row"><span class="leg">Đã cài đặt. <span id="gsy">${esc(gsMsg)}</span></span><button class="bt" onclick="gsPush()">Gửi ngay</button><button class="bt o" onclick="gsOff()">Ngắt kết nối</button></div><div class="leg">Sau mỗi lần ghi, dữ liệu tự gửi sang Sheet sau vài giây.</div>`:`<div class="leg">Dán địa chỉ script (kết thúc bằng /exec) và mật khẩu đã đặt trong mã Apps Script. Làm một lần trên mỗi thiết bị.</div><div class="row"><input id="gu" placeholder="https://script.google.com/.../exec" style="flex:1;min-width:240px"><input id="gk" type="password" placeholder="Mật khẩu" style="width:180px"><button class="bt" onclick="gsOn()">Kết nối</button></div>`}</div>`}
+function vGs(){return `<div class="card"><b>Gửi sang Google Sheet</b>${GS?`<div class="row"><span class="leg">Đã cài đặt. <span id="gsy">${esc(gsMsg)}</span></span><button class="bt" onclick="gsPush()">Gửi ngay</button><button class="bt o" onclick="gsOff()">Ngắt kết nối</button></div><div class="leg">Sau mỗi lần ghi, dữ liệu tự gửi sang Sheet sau vài giây.</div>`:`<div class="leg">Địa chỉ script đã điền sẵn. Chỉ cần nhập mật khẩu đã đặt trong mã Apps Script. Làm một lần trên mỗi thiết bị.</div><div class="row"><input id="gu" value="${GS_URL}" placeholder="https://script.google.com/.../exec" style="flex:1;min-width:240px"><input id="gk" type="password" placeholder="Mật khẩu" style="width:180px"><button class="bt" onclick="gsOn()">Kết nối</button></div>`}</div>`}
 function gsOn(){const u=$('#gu').value.trim(),k=$('#gk').value;if(!/^https:\/\/script\.google\.com\/.+\/exec$/.test(u)||!k)return alert('Hãy dán đúng địa chỉ script (https://script.google.com/.../exec) và nhập mật khẩu.');
   GS={u,k};try{localStorage.setItem('sohk_gs',JSON.stringify(GS))}catch(e){}render();gsPush()}
 function gsOff(){GS=null;gsMsg='';try{localStorage.removeItem('sohk_gs')}catch(e){}render()}

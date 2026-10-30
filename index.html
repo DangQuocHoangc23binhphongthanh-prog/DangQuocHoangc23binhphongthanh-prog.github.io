@@ -50,6 +50,7 @@ th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)
 <header>
   <h1>Sổ hạnh kiểm lớp chủ nhiệm</h1>
   <div class="sub">Trường THPT Chê Ghê-va-ra · mỗi tuần bắt đầu từ 100 điểm · học kỳ 1: 18 tuần, học kỳ 2: 17 tuần</div>
+  <div id="cls" class="row" style="margin-top:12px"></div>
   <nav id="nav"></nav>
 </header>
 <main id="main"></main>
@@ -73,6 +74,7 @@ const dm=s=>s.slice(8)+'/'+s.slice(5,7);
 let wk=mon(fmt(new Date()));
 const name=i=>(S.st.find(x=>x.id===i)||{}).n||'(đã xóa)';
 
+let R={v:2,cur:'c1',cls:[{id:'c1',n:'Lớp 1'}],d:{c1:S}};
 function calc(sid,mk){let p=100,nh=0,td=0,x=false;
   for(const l of S.lg){if(l.s!==sid||l.w!==mk||!C[l.c])continue;const g=C[l.c][1];
     if(g==='dbt')x=true;else if(g==='td')td++;else{p+=D[g];if(g==='nhe')nh++}}
@@ -91,7 +93,7 @@ function setOv(s,k,v){S.ov=S.ov||{};if(v==='')delete S.ov[s+'|'+k];else S.ov[s+'
 const ovc=(s,k,v)=>`${bd(v)}<br><select style="font-size:12px;padding:2px" onchange="setOv('${s}','${k}',this.value)"><option value="">Tự động</option>${LV.map((l,i)=>`<option value="${i}"${ov(s,k)===i?' selected':''}>${l}</option>`).join('')}</select>`;
 const bd=(lv,p)=>lv==null?'–':`<span class="b ${K[lv]}">${LV[lv]}${p!=null?' · '+p:''}</span>`;
 
-function save(){render();if(window.LS){try{S.cfg={C,D,T};localStorage.setItem('sohk',JSON.stringify(S))}catch(e){}if(GH){dirty=true;clearTimeout(tm2);tm2=setTimeout(push,800)}if(GS){clearTimeout(tm3);tm3=setTimeout(gsPush,4000)}return}if(!db)return;clearTimeout(tm);tm=setTimeout(async()=>{try{S.cfg={C,D,T};await db.doc(path).set(S)}catch(e){alert('Chưa lưu được dữ liệu: '+(e.message||e.code||e))}},500)}
+function save(){render();if(window.LS){try{S.cfg={C,D,T};localStorage.setItem('sohk',JSON.stringify(R))}catch(e){}if(GH){dirty=true;clearTimeout(tm2);tm2=setTimeout(push,800)}if(GS){clearTimeout(tm3);tm3=setTimeout(gsPush,4000)}return}if(!db)return;clearTimeout(tm);tm=setTimeout(async()=>{try{S.cfg={C,D,T};await db.doc(path).set(S)}catch(e){alert('Chưa lưu được dữ liệu: '+(e.message||e.code||e))}},500)}
 function go(t){tab=t;render()}
 function setWk(v){if(v){wk=mon(v);render()}}
 function addLog(){if(!sel.size)return alert('Hãy tích chọn ít nhất một học sinh.');sel.forEach(s=>S.lg.push({id:id8(),s,w:wk,c:cr}));sel.clear();save()}
@@ -111,7 +113,7 @@ async function out(fn,aoa){if(!window.XLSX)return alert('Chưa tải được th
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),'Sheet1');
   const d=XLSX.write(wb,{bookType:'xlsx',type:'array'});try{if(dl)await dl.save({filename:fn,data:d});else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([d]));a.download=fn;a.click()}}catch(e){}}
 const tpl=()=>out('mau-danh-sach-hoc-sinh.xlsx',[['Họ và tên','Phụ huynh (ví dụ: Mẹ - Nguyễn Thị Hoa)','Số điện thoại'],['Nguyễn Văn An','Mẹ - Nguyễn Thị Hoa','0912345678']]);
-function exp(){const ms=weeks();out('tong-ket-hanh-kiem.xlsx',[['Họ và tên',...ms.map(m=>'Tuần '+wn(m)),'Học kỳ 1','Học kỳ 2','Cả năm'],
+function exp(){const ms=weeks();out('tong-ket-'+curN().replace(/[^\wÀ-ỹ-]+/g,'_')+'.xlsx',[['Họ và tên',...ms.map(m=>'Tuần '+wn(m)),'Học kỳ 1','Học kỳ 2','Cả năm'],
   ...S.st.map(s=>[s.n,...ms.map(m=>{const a=calc(s.id,m);return LV[a.lv]+' ('+(a.x?'đặc biệt':a.p)+')'}),...[hv(s.id,1),hv(s.id,2),yr(s.id)].map(v=>v==null?'':LV[v])])])}
 
 function vTq(){const mk=wk,ls=S.lg.filter(l=>l.w===wk),n=[0,0,0,0];
@@ -155,11 +157,10 @@ const hm=()=>new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-dig
 async function pull(){if(!GH||dirty)return;try{const r=await fetch(API,{headers:hd(),cache:'no-store'});
   if(r.status===404){sha=null;sy('Kho chưa có dữ liệu.');return}
   if(!r.ok)throw new Error(await er(r));
-  const j=await r.json();sha=j.sha;S=Object.assign({st:[],lg:[]},JSON.parse(ub64(j.content)));
-  if(S.cfg){C=S.cfg.C;D=S.cfg.D;T=S.cfg.T}
-  try{localStorage.setItem('sohk',JSON.stringify(S))}catch(e){}sy('Đã tải lúc '+hm());render()}catch(e){sy('Chưa đồng bộ được: '+e.message)}}
+  const j=await r.json();sha=j.sha;setR(JSON.parse(ub64(j.content)));
+  try{localStorage.setItem('sohk',JSON.stringify(R))}catch(e){}sy('Đã tải lúc '+hm());render()}catch(e){sy('Chưa đồng bộ được: '+e.message)}}
 async function push(retry){if(!GH)return;try{S.cfg={C,D,T};
-  const r=await fetch(API,{method:'PUT',headers:{...hd(),'Content-Type':'application/json'},body:JSON.stringify({message:'cap nhat',content:b64(JSON.stringify(S)),...(sha?{sha}:{})})});
+  const r=await fetch(API,{method:'PUT',headers:{...hd(),'Content-Type':'application/json'},body:JSON.stringify({message:'cap nhat',content:b64(JSON.stringify(R)),...(sha?{sha}:{})})});
   if((r.status===409||r.status===422)&&!retry){const g=await fetch(API,{headers:hd(),cache:'no-store'});sha=g.ok?(await g.json()).sha:null;return push(true)}
   if(!r.ok)throw new Error(await er(r));
   sha=(await r.json()).content.sha;dirty=false;sy('Đã lưu lúc '+hm())}catch(e){sy('Chưa lưu được lên kho: '+e.message)}}
@@ -174,18 +175,31 @@ function syOff(){GH=null;try{localStorage.removeItem('sohk_tk')}catch(e){}SY='';
 let GS=null,gsMsg='',tm3;
 const GS_URL='https://script.google.com/macros/s/AKfycbySDcIaJ4ddhegI3CvQOZMrk0EBwvBexZSrTue6E4ojmSl819ewcFs5jppgLFyKN1v_/exec';
 const gsy=m=>{gsMsg=m;const e=$('#gsy');if(e)e.textContent=m};
-function gsSheets(){const ws=weeks();return{
+function gsSheets(){const ws=weeks(),pf=curN().replace(/[\[\]*?:\/\\]/g,'').slice(0,40)+' - ';const o={
  'Học sinh':[['STT','Họ và tên','Phụ huynh','Số điện thoại'],...S.st.map((s,i)=>[i+1,s.n,s.p,s.ph])],
  'Lỗi đã ghi':[['Tuần','Bắt đầu tuần','Học sinh','Tiêu chí','Nhóm','Điểm'],...S.lg.filter(l=>C[l.c]).slice().sort((a,b)=>a.w<b.w?-1:a.w>b.w?1:0).map(l=>{const k=C[l.c][1];return[wn(l.w),l.w,name(l.s),C[l.c][0],G[k],k==='dbt'?'Chưa đạt':D[k]]})],
  'Xếp loại tuần':[['Học sinh',...ws.map(w=>'Tuần '+wn(w))],...S.st.map(s=>[s.n,...ws.map(w=>{const a=calc(s.id,w);return LV[a.lv]+' ('+(a.x?'CD':a.p)+')'})])],
- 'Tổng kết':[['Học sinh','Học kỳ 1','Học kỳ 2','Cả năm'],...S.st.map(s=>[s.n,...[hv(s.id,1),hv(s.id,2),yr(s.id)].map(v=>v==null?'':LV[v])])]}}
-async function gsPush(){if(!GS)return;const body=JSON.stringify({key:GS.k,data:S,sheets:gsSheets()}),o={method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body};gsy('Đang gửi...');
+ 'Tổng kết':[['Học sinh','Học kỳ 1','Học kỳ 2','Cả năm'],...S.st.map(s=>[s.n,...[hv(s.id,1),hv(s.id,2),yr(s.id)].map(v=>v==null?'':LV[v])])]};const r={};for(const k in o)r[pf+k]=o[k];return r}
+async function gsPush(){if(!GS)return;const body=JSON.stringify({key:GS.k,data:R,sheets:gsSheets()}),o={method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body};gsy('Đang gửi...');
  try{const r=await fetch(GS.u,o);const j=await r.json();gsy(j.ok?'Đã gửi lúc '+hm():'Sheet báo lỗi: '+(j.error||'không rõ'))}
  catch(e){try{await fetch(GS.u,{...o,mode:'no-cors'});gsy('Đã gửi lúc '+hm()+' (chưa xác nhận được, hãy mở Sheet để kiểm tra)')}catch(x){gsy('Chưa gửi được: '+x.message)}}}
 function vGs(){return `<div class="card"><b>Gửi sang Google Sheet</b>${GS?`<div class="row"><span class="leg">Đã cài đặt. <span id="gsy">${esc(gsMsg)}</span></span><button class="bt" onclick="gsPush()">Gửi ngay</button><button class="bt o" onclick="gsOff()">Ngắt kết nối</button></div><div class="leg">Sau mỗi lần ghi, dữ liệu tự gửi sang Sheet sau vài giây.</div>`:`<div class="leg">Địa chỉ script đã điền sẵn. Chỉ cần nhập mật khẩu đã đặt trong mã Apps Script. Làm một lần trên mỗi thiết bị.</div><div class="row"><input id="gu" value="${GS_URL}" placeholder="https://script.google.com/.../exec" style="flex:1;min-width:240px"><input id="gk" type="password" placeholder="Mật khẩu" style="width:180px"><button class="bt" onclick="gsOn()">Kết nối</button></div>`}</div>`}
 function gsOn(){const u=$('#gu').value.trim(),k=$('#gk').value;if(!/^https:\/\/script\.google\.com\/.+\/exec$/.test(u)||!k)return alert('Hãy dán đúng địa chỉ script (https://script.google.com/.../exec) và nhập mật khẩu.');
   GS={u,k};try{localStorage.setItem('sohk_gs',JSON.stringify(GS))}catch(e){}render();gsPush()}
 function gsOff(){GS=null;gsMsg='';try{localStorage.removeItem('sohk_gs')}catch(e){}render()}
+const curN=()=>R.cls.find(c=>c.id===R.cur).n;
+function loadCfg(){if(S.cfg){C=S.cfg.C;D=S.cfg.D;T=S.cfg.T}}
+function setR(o){if(!o||!o.cls)o={v:2,cur:'c1',cls:[{id:'c1',n:'Lớp 1'}],d:{c1:o||{}}};
+  for(const k in o.d)o.d[k]=Object.assign({st:[],lg:[]},o.d[k]);
+  if(!o.d[o.cur])o.cur=o.cls[0].id;R=o;S=R.d[R.cur];loadCfg();sel.clear()}
+function switchCls(id){if(!R.d[id])return;R.cur=id;S=R.d[id];loadCfg();sel.clear();save()}
+function newCls(){const n=(prompt('Tên lớp mới (ví dụ: 10TN2):')||'').trim();if(!n)return;
+  const id='c'+id8();R.d[id]={st:[],lg:[],cfg:{C:JSON.parse(JSON.stringify(C)),D:{...D},T:[...T]}};R.cls.push({id,n});switchCls(id)}
+function renCls(){const n=(prompt('Tên lớp:',curN())||'').trim();if(!n)return;R.cls.find(c=>c.id===R.cur).n=n;save()}
+function delCls(){if(R.cls.length<2)return alert('Phải còn ít nhất một lớp.');
+  if(!confirm('Xóa lớp "'+curN()+'" cùng toàn bộ học sinh và ghi nhận của lớp? Không thể hoàn tác.'))return;
+  const id=R.cur;R.cls=R.cls.filter(c=>c.id!==id);delete R.d[id];switchCls(R.cls[0].id)}
+function vCls(){return `<select onchange="switchCls(this.value)" style="flex:1;min-width:150px;font-weight:700;font-size:16px;padding:10px">${R.cls.map(c=>`<option value="${c.id}"${c.id===R.cur?' selected':''}>${esc(c.n)}</option>`).join('')}</select><button class="bt o" onclick="newCls()">+ Lớp mới</button><button class="bt o" onclick="renCls()">Đổi tên</button><button class="bt o" onclick="delCls()">Xóa lớp</button>`}
 function vCd(){return `${window.LS?vSy()+vGs():''}<div class="card"><b>Điểm mỗi lần ghi</b><div class="row">${['nhe','ncp','vkp','ntr','td'].map(g=>`<label>${G[g]} <input type="number" style="width:70px" value="${D[g]}" onchange="D['${g}']=+this.value;save()"></label>`).join('')}</div>
 <div class="row"><b>Mức xếp loại</b>${[['Tốt từ',0],['Khá từ',1],['Đạt từ',2]].map(a=>`<label>${a[0]} <input type="number" style="width:70px" value="${T[a[1]]}" onchange="T[${a[1]}]=+this.value;save()"></label>`).join('')}<span class="leg">Dưới mức Đạt là Chưa đạt.</span></div>
 <div class="leg">Điểm trừ nhập số âm. Lỗi đặc biệt nghiêm trọng luôn xếp Chưa đạt. Đổi điểm hoặc nhóm sẽ tính lại cả các tháng đã ghi.</div></div>
@@ -193,10 +207,10 @@ function vCd(){return `${window.LS?vSy()+vGs():''}<div class="card"><b>Điểm m
 ${C.map((c,i)=>`<tr${c[2]?' style="opacity:.5"':''}><td><input style="width:100%" value="${esc(c[0])}" onchange="C[${i}][0]=this.value;save()"></td><td><select onchange="C[${i}][1]=this.value;save()">${Object.keys(G).map(g=>`<option value="${g}"${c[1]===g?' selected':''}>${G[g]}</option>`).join('')}</select></td><td><button class="x" onclick="C[${i}][2]=${c[2]?0:1};save()">${c[2]?'Hiện':'Ẩn'}</button></td></tr>`).join('')}</table></div>`}
 function addCr(){C.push(['Tiêu chí mới','nhe']);save()}
 function render(){
-  $('#nav').innerHTML=[['tq','Tổng quan'],['dg','Đánh giá'],['tk','Tổng kết'],['hs','Học sinh'],['cd','Cài đặt']].map(a=>`<button class="${tab===a[0]?'on':''}" onclick="go('${a[0]}')">${a[1]}</button>`).join('');
+  $('#cls').innerHTML=window.LS?vCls():'';$('#nav').innerHTML=[['tq','Tổng quan'],['dg','Đánh giá'],['tk','Tổng kết'],['hs','Học sinh'],['cd','Cài đặt']].map(a=>`<button class="${tab===a[0]?'on':''}" onclick="go('${a[0]}')">${a[1]}</button>`).join('');
   $('#main').innerHTML=(window.LS?(GH?'<div class="warn" style="background:#dcefdc;color:#1d4a2c">Đã kết nối kho dữ liệu riêng tư. <span id="sy">'+esc(SY)+'</span></div>':'<div class="warn">Dữ liệu đang chỉ lưu trong trình duyệt của thiết bị này. Vào Cài đặt để kết nối kho đồng bộ với điện thoại, hoặc xuất Excel để sao lưu.</div>'):db?'':'<div class="warn">Chưa đăng nhập hoặc chưa có kho dữ liệu: dữ liệu chỉ tồn tại trong lần mở này và sẽ mất khi đóng trang.</div>')+({tq:vTq,dg:vDg,tk:vTk,hs:vHs,cd:vCd})[tab]()}
 render();
-(async()=>{try{if(typeof claude==='undefined'){window.LS=true;try{const r=localStorage.getItem('sohk');if(r){S=Object.assign({st:[],lg:[]},JSON.parse(r));if(S.cfg){C=S.cfg.C;D=S.cfg.D;T=S.cfg.T}}}catch(e){}try{GH=localStorage.getItem('sohk_tk')}catch(e){}try{GS=JSON.parse(localStorage.getItem('sohk_gs'))}catch(e){}render();if(GH)pull();document.addEventListener('visibilitychange',()=>{if(!document.hidden&&GH&&!dirty)pull()});return}const u=await claude.use('user');uid=u?await u.id():null;db=uid?await claude.use('db'):null;dl=await claude.use('downloads');
+(async()=>{try{if(typeof claude==='undefined'){window.LS=true;try{const r=localStorage.getItem('sohk');if(r){setR(JSON.parse(r))}}catch(e){}try{GH=localStorage.getItem('sohk_tk')}catch(e){}try{GS=JSON.parse(localStorage.getItem('sohk_gs'))}catch(e){}render();if(GH)pull();document.addEventListener('visibilitychange',()=>{if(!document.hidden&&GH&&!dirty)pull()});return}const u=await claude.use('user');uid=u?await u.id():null;db=uid?await claude.use('db'):null;dl=await claude.use('downloads');
   if(db){path='data/users/'+uid+'/lop';const s=await db.doc(path).get();if(s.exists){S=Object.assign({st:[],lg:[]},s.data());if(S.cfg){C=S.cfg.C;D=S.cfg.D;T=S.cfg.T}}}}catch(e){db=null}render()})();
 </script>
 </body>

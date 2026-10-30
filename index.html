@@ -91,7 +91,7 @@ function setOv(s,k,v){S.ov=S.ov||{};if(v==='')delete S.ov[s+'|'+k];else S.ov[s+'
 const ovc=(s,k,v)=>`${bd(v)}<br><select style="font-size:12px;padding:2px" onchange="setOv('${s}','${k}',this.value)"><option value="">Tự động</option>${LV.map((l,i)=>`<option value="${i}"${ov(s,k)===i?' selected':''}>${l}</option>`).join('')}</select>`;
 const bd=(lv,p)=>lv==null?'–':`<span class="b ${K[lv]}">${LV[lv]}${p!=null?' · '+p:''}</span>`;
 
-function save(){render();if(window.LS){try{S.cfg={C,D,T};localStorage.setItem('sohk',JSON.stringify(S))}catch(e){}if(GH){dirty=true;clearTimeout(tm2);tm2=setTimeout(push,800)}return}if(!db)return;clearTimeout(tm);tm=setTimeout(async()=>{try{S.cfg={C,D,T};await db.doc(path).set(S)}catch(e){alert('Chưa lưu được dữ liệu: '+(e.message||e.code||e))}},500)}
+function save(){render();if(window.LS){try{S.cfg={C,D,T};localStorage.setItem('sohk',JSON.stringify(S))}catch(e){}if(GH){dirty=true;clearTimeout(tm2);tm2=setTimeout(push,800)}if(GS){clearTimeout(tm3);tm3=setTimeout(gsPush,4000)}return}if(!db)return;clearTimeout(tm);tm=setTimeout(async()=>{try{S.cfg={C,D,T};await db.doc(path).set(S)}catch(e){alert('Chưa lưu được dữ liệu: '+(e.message||e.code||e))}},500)}
 function go(t){tab=t;render()}
 function setWk(v){if(v){wk=mon(v);render()}}
 function addLog(){if(!sel.size)return alert('Hãy tích chọn ít nhất một học sinh.');sel.forEach(s=>S.lg.push({id:id8(),s,w:wk,c:cr}));sel.clear();save()}
@@ -171,7 +171,21 @@ async function syOn(){const v=$('#tk').value.trim();if(!v)return;GH=v;try{localS
     else throw new Error(await er(r))}
   catch(e){GH=null;try{localStorage.removeItem('sohk_tk')}catch(x){}alert('Không kết nối được: '+e.message)}render()}
 function syOff(){GH=null;try{localStorage.removeItem('sohk_tk')}catch(e){}SY='';render()}
-function vCd(){return `${window.LS?vSy():''}<div class="card"><b>Điểm mỗi lần ghi</b><div class="row">${['nhe','ncp','vkp','ntr','td'].map(g=>`<label>${G[g]} <input type="number" style="width:70px" value="${D[g]}" onchange="D['${g}']=+this.value;save()"></label>`).join('')}</div>
+let GS=null,gsMsg='',tm3;
+const gsy=m=>{gsMsg=m;const e=$('#gsy');if(e)e.textContent=m};
+function gsSheets(){const ws=weeks();return{
+ 'Học sinh':[['STT','Họ và tên','Phụ huynh','Số điện thoại'],...S.st.map((s,i)=>[i+1,s.n,s.p,s.ph])],
+ 'Lỗi đã ghi':[['Tuần','Bắt đầu tuần','Học sinh','Tiêu chí','Nhóm','Điểm'],...S.lg.filter(l=>C[l.c]).slice().sort((a,b)=>a.w<b.w?-1:a.w>b.w?1:0).map(l=>{const k=C[l.c][1];return[wn(l.w),l.w,name(l.s),C[l.c][0],G[k],k==='dbt'?'Chưa đạt':D[k]]})],
+ 'Xếp loại tuần':[['Học sinh',...ws.map(w=>'Tuần '+wn(w))],...S.st.map(s=>[s.n,...ws.map(w=>{const a=calc(s.id,w);return LV[a.lv]+' ('+(a.x?'CD':a.p)+')'})])],
+ 'Tổng kết':[['Học sinh','Học kỳ 1','Học kỳ 2','Cả năm'],...S.st.map(s=>[s.n,...[hv(s.id,1),hv(s.id,2),yr(s.id)].map(v=>v==null?'':LV[v])])]}}
+async function gsPush(){if(!GS)return;const body=JSON.stringify({key:GS.k,data:S,sheets:gsSheets()}),o={method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body};gsy('Đang gửi...');
+ try{const r=await fetch(GS.u,o);const j=await r.json();gsy(j.ok?'Đã gửi lúc '+hm():'Sheet báo lỗi: '+(j.error||'không rõ'))}
+ catch(e){try{await fetch(GS.u,{...o,mode:'no-cors'});gsy('Đã gửi lúc '+hm()+' (chưa xác nhận được, hãy mở Sheet để kiểm tra)')}catch(x){gsy('Chưa gửi được: '+x.message)}}}
+function vGs(){return `<div class="card"><b>Gửi sang Google Sheet</b>${GS?`<div class="row"><span class="leg">Đã cài đặt. <span id="gsy">${esc(gsMsg)}</span></span><button class="bt" onclick="gsPush()">Gửi ngay</button><button class="bt o" onclick="gsOff()">Ngắt kết nối</button></div><div class="leg">Sau mỗi lần ghi, dữ liệu tự gửi sang Sheet sau vài giây.</div>`:`<div class="leg">Dán địa chỉ script (kết thúc bằng /exec) và mật khẩu đã đặt trong mã Apps Script. Làm một lần trên mỗi thiết bị.</div><div class="row"><input id="gu" placeholder="https://script.google.com/.../exec" style="flex:1;min-width:240px"><input id="gk" type="password" placeholder="Mật khẩu" style="width:180px"><button class="bt" onclick="gsOn()">Kết nối</button></div>`}</div>`}
+function gsOn(){const u=$('#gu').value.trim(),k=$('#gk').value;if(!/^https:\/\/script\.google\.com\/.+\/exec$/.test(u)||!k)return alert('Hãy dán đúng địa chỉ script (https://script.google.com/.../exec) và nhập mật khẩu.');
+  GS={u,k};try{localStorage.setItem('sohk_gs',JSON.stringify(GS))}catch(e){}render();gsPush()}
+function gsOff(){GS=null;gsMsg='';try{localStorage.removeItem('sohk_gs')}catch(e){}render()}
+function vCd(){return `${window.LS?vSy()+vGs():''}<div class="card"><b>Điểm mỗi lần ghi</b><div class="row">${['nhe','ncp','vkp','ntr','td'].map(g=>`<label>${G[g]} <input type="number" style="width:70px" value="${D[g]}" onchange="D['${g}']=+this.value;save()"></label>`).join('')}</div>
 <div class="row"><b>Mức xếp loại</b>${[['Tốt từ',0],['Khá từ',1],['Đạt từ',2]].map(a=>`<label>${a[0]} <input type="number" style="width:70px" value="${T[a[1]]}" onchange="T[${a[1]}]=+this.value;save()"></label>`).join('')}<span class="leg">Dưới mức Đạt là Chưa đạt.</span></div>
 <div class="leg">Điểm trừ nhập số âm. Lỗi đặc biệt nghiêm trọng luôn xếp Chưa đạt. Đổi điểm hoặc nhóm sẽ tính lại cả các tháng đã ghi.</div></div>
 <div class="card tw"><div class="row"><b>Tiêu chí</b><button class="bt" onclick="addCr()">Thêm tiêu chí</button></div><table><tr><th>Tên</th><th>Nhóm</th><th></th></tr>
@@ -181,7 +195,7 @@ function render(){
   $('#nav').innerHTML=[['tq','Tổng quan'],['dg','Đánh giá'],['tk','Tổng kết'],['hs','Học sinh'],['cd','Cài đặt']].map(a=>`<button class="${tab===a[0]?'on':''}" onclick="go('${a[0]}')">${a[1]}</button>`).join('');
   $('#main').innerHTML=(window.LS?(GH?'<div class="warn" style="background:#dcefdc;color:#1d4a2c">Đã kết nối kho dữ liệu riêng tư. <span id="sy">'+esc(SY)+'</span></div>':'<div class="warn">Dữ liệu đang chỉ lưu trong trình duyệt của thiết bị này. Vào Cài đặt để kết nối kho đồng bộ với điện thoại, hoặc xuất Excel để sao lưu.</div>'):db?'':'<div class="warn">Chưa đăng nhập hoặc chưa có kho dữ liệu: dữ liệu chỉ tồn tại trong lần mở này và sẽ mất khi đóng trang.</div>')+({tq:vTq,dg:vDg,tk:vTk,hs:vHs,cd:vCd})[tab]()}
 render();
-(async()=>{try{if(typeof claude==='undefined'){window.LS=true;try{const r=localStorage.getItem('sohk');if(r){S=Object.assign({st:[],lg:[]},JSON.parse(r));if(S.cfg){C=S.cfg.C;D=S.cfg.D;T=S.cfg.T}}}catch(e){}try{GH=localStorage.getItem('sohk_tk')}catch(e){}render();if(GH)pull();document.addEventListener('visibilitychange',()=>{if(!document.hidden&&GH&&!dirty)pull()});return}const u=await claude.use('user');uid=u?await u.id():null;db=uid?await claude.use('db'):null;dl=await claude.use('downloads');
+(async()=>{try{if(typeof claude==='undefined'){window.LS=true;try{const r=localStorage.getItem('sohk');if(r){S=Object.assign({st:[],lg:[]},JSON.parse(r));if(S.cfg){C=S.cfg.C;D=S.cfg.D;T=S.cfg.T}}}catch(e){}try{GH=localStorage.getItem('sohk_tk')}catch(e){}try{GS=JSON.parse(localStorage.getItem('sohk_gs'))}catch(e){}render();if(GH)pull();document.addEventListener('visibilitychange',()=>{if(!document.hidden&&GH&&!dirty)pull()});return}const u=await claude.use('user');uid=u?await u.id():null;db=uid?await claude.use('db'):null;dl=await claude.use('downloads');
   if(db){path='data/users/'+uid+'/lop';const s=await db.doc(path).get();if(s.exists){S=Object.assign({st:[],lg:[]},s.data());if(S.cfg){C=S.cfg.C;D=S.cfg.D;T=S.cfg.T}}}}catch(e){db=null}render()})();
 </script>
 </body>
